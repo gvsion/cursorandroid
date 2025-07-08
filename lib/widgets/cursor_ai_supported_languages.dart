@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class CursorAISupportedLanguages extends StatelessWidget {
   final Color cardColor;
@@ -9,56 +10,47 @@ class CursorAISupportedLanguages extends StatelessWidget {
     final languages = [
       {
         'name': 'Python',
-        'icon': Icons.code,
-        'color': const Color(0xFF3572A5),
+        'asset': 'assets/languages/python.svg',
         'description': 'Muito usado em IA, ciência de dados, web e automação.'
       },
       {
         'name': 'JavaScript',
-        'icon': Icons.javascript,
-        'color': const Color(0xFFF7DF1E),
+        'asset': 'assets/languages/javascript.svg',
         'description': 'A linguagem da web, essencial para front-end e back-end.'
       },
       {
         'name': 'TypeScript',
-        'icon': Icons.code,
-        'color': const Color(0xFF3178C6),
+        'asset': 'assets/languages/typescript.svg',
         'description': 'JavaScript com tipagem estática, mais seguro e robusto.'
       },
       {
         'name': 'Java',
-        'icon': Icons.coffee,
-        'color': const Color(0xFFB07219),
+        'asset': 'assets/languages/java.svg',
         'description': 'Popular em aplicações corporativas, Android e backend.'
       },
       {
         'name': 'C#',
-        'icon': Icons.code,
-        'color': const Color(0xFF178600),
+        'asset': 'assets/languages/csharp.svg',
         'description': 'Muito usado em aplicações Windows, jogos (Unity) e web.'
       },
       {
         'name': 'C++',
-        'icon': Icons.memory,
-        'color': const Color(0xFFF34B7D),
+        'asset': 'assets/languages/cpp.svg',
         'description': 'Performance máxima para sistemas, jogos e aplicações críticas.'
       },
       {
         'name': 'Go',
-        'icon': Icons.directions_run,
-        'color': const Color(0xFF00ADD8),
+        'asset': 'assets/languages/go.svg',
         'description': 'Simples, eficiente e ideal para sistemas distribuídos.'
       },
       {
         'name': 'Rust',
-        'icon': Icons.security,
-        'color': const Color(0xFFDEA584),
+        'asset': 'assets/languages/rust.svg',
         'description': 'Segurança e performance para sistemas modernos.'
       },
       {
         'name': 'Dart',
-        'icon': Icons.flutter_dash,
-        'color': const Color(0xFF00B4AB),
+        'asset': 'assets/languages/dart.svg',
         'description': 'Linguagem do Flutter, ideal para apps multiplataforma.'
       },
     ];
@@ -81,8 +73,8 @@ class CursorAISupportedLanguages extends StatelessWidget {
           alignment: WrapAlignment.center,
           children: languages.map((lang) {
             return Container(
-              width: 170,
-              padding: const EdgeInsets.all(14),
+              width: 110,
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(14),
@@ -97,33 +89,31 @@ class CursorAISupportedLanguages extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircleAvatar(
-                    backgroundColor: lang['color'] as Color,
-                    radius: 22,
-                    child: Icon(
-                      lang['icon'] as IconData,
-                      color: Colors.white,
-                      size: 26,
-                    ),
+                  SvgPicture.asset(
+                    lang['asset'] as String,
+                    width: 32,
+                    height: 32,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Text(
                     lang['name'] as String,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     lang['description'] as String,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 10,
                       color: Theme.of(context).brightness == Brightness.dark
                           ? Colors.white70
                           : Colors.grey[700],
                     ),
                     textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
