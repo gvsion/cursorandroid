@@ -1,9 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class CursorAISupportedLanguages extends StatelessWidget {
+class CursorAISupportedLanguages extends StatefulWidget {
   final Color cardColor;
   const CursorAISupportedLanguages({super.key, required this.cardColor});
+
+  @override
+  State<CursorAISupportedLanguages> createState() => _CursorAISupportedLanguagesState();
+}
+
+class _CursorAISupportedLanguagesState extends State<CursorAISupportedLanguages>
+    with TickerProviderStateMixin {
+  late Map<String, AnimationController> _animationControllers;
+  late Map<String, Animation<double>> _scaleAnimations;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAnimations();
+  }
+
+  void _initializeAnimations() {
+    _animationControllers = {};
+    _scaleAnimations = {};
+
+    final languages = [
+      'Python', 'JavaScript', 'TypeScript', 'Java', 'C#', 'C++', 'Go', 'Rust', 'Dart'
+    ];
+
+    for (String lang in languages) {
+      _animationControllers[lang] = AnimationController(
+        duration: const Duration(milliseconds: 200),
+        vsync: this,
+      );
+      
+      _scaleAnimations[lang] = Tween<double>(
+        begin: 1.0,
+        end: 0.95,
+      ).animate(CurvedAnimation(
+        parent: _animationControllers[lang]!,
+        curve: Curves.easeInOut,
+      ));
+    }
+  }
+
+  @override
+  void dispose() {
+    for (var controller in _animationControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onCardTap(String languageName) {
+    final controller = _animationControllers[languageName];
+    if (controller != null) {
+      controller.forward().then((_) {
+        controller.reverse();
+      });
+    }
+    
+    // Feedback tátil
+    HapticFeedback.lightImpact();
+    // Removido: Mostrar snackbar com informação da linguagem
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,51 +133,65 @@ class CursorAISupportedLanguages extends StatelessWidget {
           runSpacing: 16,
           alignment: WrapAlignment.center,
           children: languages.map((lang) {
-            return Container(
-              width: 110,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SvgPicture.asset(
-                    lang['asset'] as String,
-                    width: 32,
-                    height: 32,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    lang['name'] as String,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+            final languageName = lang['name'] as String;
+            final scaleAnimation = _scaleAnimations[languageName]!;
+            
+            return AnimatedBuilder(
+              animation: scaleAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: scaleAnimation.value,
+                  child: GestureDetector(
+                    onTap: () => _onCardTap(languageName),
+                    child: Container(
+                      width: 110,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: widget.cardColor,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            lang['asset'] as String,
+                            width: 32,
+                            height: 32,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            lang['name'] as String,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            lang['description'] as String,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white70
+                                  : Colors.grey[700],
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    lang['description'] as String,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white70
-                          : Colors.grey[700],
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+                );
+              },
             );
           }).toList(),
         ),
