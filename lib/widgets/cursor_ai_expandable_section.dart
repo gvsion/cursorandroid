@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CursorAIExpandableSection extends StatefulWidget {
   final Color cardColor;
@@ -8,64 +9,139 @@ class CursorAIExpandableSection extends StatefulWidget {
   State<CursorAIExpandableSection> createState() => _CursorAIExpandableSectionState();
 }
 
-class _CursorAIExpandableSectionState extends State<CursorAIExpandableSection> {
+class _CursorAIExpandableSectionState extends State<CursorAIExpandableSection>
+    with TickerProviderStateMixin {
   bool _isExpanded = false;
+  late AnimationController _scaleController;
+  late AnimationController _bounceController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _bounceAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Controlador de escala
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    
+    // Controlador de bounce
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+
+    // Animações
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.98,
+    ).animate(CurvedAnimation(
+      parent: _scaleController,
+      curve: Curves.easeInOut,
+    ));
+
+    _bounceAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _bounceController,
+      curve: Curves.bounceOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  void _onTap() {
+    // Animação de escala
+    _scaleController.forward().then((_) {
+      _scaleController.reverse();
+    });
+
+    // Animação de bounce
+    _bounceController.forward().then((_) {
+      _bounceController.reverse();
+    });
+
+    // Feedback tátil
+    HapticFeedback.lightImpact();
+
+    setState(() {
+      _isExpanded = !_isExpanded;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: widget.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isExpanded = !_isExpanded;
-              });
-            },
-            child: Row(
-              children: [
-                const Icon(Icons.info_outline, color: Color(0xFF6366F1)),
-                const SizedBox(width: 12),
-                const Text(
-                  'Recursos Avançados',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                AnimatedRotation(
-                  turns: _isExpanded ? 0.25 : 0,
-                  duration: const Duration(milliseconds: 300),
-                  child: const Icon(Icons.arrow_forward_ios, size: 16),
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        _scaleController,
+        _bounceController,
+      ]),
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: widget.cardColor,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05 + (_bounceAnimation.value * 0.03)),
+                  blurRadius: 10 + (_bounceAnimation.value * 5),
+                  offset: Offset(0, 5 + (_bounceAnimation.value * 2)),
                 ),
               ],
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: _onTap,
+                  child: Row(
+                    children: [
+                      Transform.scale(
+                        scale: 1.0 + (_bounceAnimation.value * 0.1),
+                        child: const Icon(Icons.info_outline, color: Color(0xFF6366F1)),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Recursos Avançados',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      AnimatedRotation(
+                        turns: _isExpanded ? 0.25 : 0,
+                        duration: const Duration(milliseconds: 300),
+                        child: const Icon(Icons.arrow_forward_ios, size: 16),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_isExpanded) ...[
+                  const SizedBox(height: 16),
+                  _buildFeatureItem('Chat com IA', 'Converse naturalmente sobre seu código'),
+                  _buildFeatureItem('Autocompletar Inteligente', 'Sugestões contextuais avançadas'),
+                  _buildFeatureItem('Refatoração Automática', 'Melhore seu código com um clique'),
+                  _buildFeatureItem('Debugging Inteligente', 'Encontre bugs mais rapidamente'),
+                  _buildFeatureItem('Git Integration', 'Controle de versão integrado'),
+                ],
+              ],
+            ),
           ),
-          if (_isExpanded) ...[
-            const SizedBox(height: 16),
-            _buildFeatureItem('Chat com IA', 'Converse naturalmente sobre seu código'),
-            _buildFeatureItem('Autocompletar Inteligente', 'Sugestões contextuais avançadas'),
-            _buildFeatureItem('Refatoração Automática', 'Melhore seu código com um clique'),
-            _buildFeatureItem('Debugging Inteligente', 'Encontre bugs mais rapidamente'),
-            _buildFeatureItem('Git Integration', 'Controle de versão integrado'),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 
