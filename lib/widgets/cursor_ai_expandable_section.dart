@@ -13,9 +13,11 @@ class _CursorAIExpandableSectionState extends State<CursorAIExpandableSection>
     with TickerProviderStateMixin {
   bool _isExpanded = false;
   late AnimationController _scaleController;
-  late AnimationController _bounceController;
   late Animation<double> _scaleAnimation;
+  late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
+  late AnimationController _listController;
+  late Animation<double> _listAnimation;
 
   @override
   void initState() {
@@ -30,6 +32,12 @@ class _CursorAIExpandableSectionState extends State<CursorAIExpandableSection>
     // Controlador de bounce
     _bounceController = AnimationController(
       duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+
+    // Controlador de lista
+    _listController = AnimationController(
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
 
@@ -49,12 +57,21 @@ class _CursorAIExpandableSectionState extends State<CursorAIExpandableSection>
       parent: _bounceController,
       curve: Curves.bounceOut,
     ));
+
+    _listAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _listController,
+      curve: Curves.easeOut,
+    ));
   }
 
   @override
   void dispose() {
     _scaleController.dispose();
     _bounceController.dispose();
+    _listController.dispose();
     super.dispose();
   }
 
@@ -75,6 +92,12 @@ class _CursorAIExpandableSectionState extends State<CursorAIExpandableSection>
     setState(() {
       _isExpanded = !_isExpanded;
     });
+
+    if (_isExpanded) {
+      _listController.forward();
+    } else {
+      _listController.reverse();
+    }
   }
 
   @override
@@ -83,6 +106,7 @@ class _CursorAIExpandableSectionState extends State<CursorAIExpandableSection>
       animation: Listenable.merge([
         _scaleController,
         _bounceController,
+        _listController,
       ]),
       builder: (context, child) {
         return Transform.scale(
@@ -131,11 +155,26 @@ class _CursorAIExpandableSectionState extends State<CursorAIExpandableSection>
                 ),
                 if (_isExpanded) ...[
                   const SizedBox(height: 16),
-                  _buildFeatureItem('Chat com IA', 'Converse naturalmente sobre seu código'),
-                  _buildFeatureItem('Autocompletar Inteligente', 'Sugestões contextuais avançadas'),
-                  _buildFeatureItem('Refatoração Automática', 'Melhore seu código com um clique'),
-                  _buildFeatureItem('Debugging Inteligente', 'Encontre bugs mais rapidamente'),
-                  _buildFeatureItem('Git Integration', 'Controle de versão integrado'),
+                  AnimatedBuilder(
+                    animation: _listAnimation,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: _listAnimation.value,
+                        child: Transform.translate(
+                          offset: Offset(0, 20 * (1 - _listAnimation.value)),
+                          child: Column(
+                            children: [
+                              _buildFeatureItem('Chat com IA', 'Converse naturalmente sobre seu código'),
+                              _buildFeatureItem('Autocompletar Inteligente', 'Sugestões contextuais avançadas'),
+                              _buildFeatureItem('Refatoração Automática', 'Melhore seu código com um clique'),
+                              _buildFeatureItem('Debugging Inteligente', 'Encontre bugs mais rapidamente'),
+                              _buildFeatureItem('Git Integration', 'Controle de versão integrado'),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ],
             ),

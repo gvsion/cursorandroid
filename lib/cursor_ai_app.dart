@@ -20,6 +20,7 @@ class CursorAIApp extends StatelessWidget {
             ),
             scaffoldBackgroundColor: const Color(0xFFF8FAFC),
             useMaterial3: true,
+            fontFamily: 'Roboto Mono',
           ),
           darkTheme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
@@ -28,6 +29,7 @@ class CursorAIApp extends StatelessWidget {
             ),
             scaffoldBackgroundColor: const Color(0xFF181A20),
             useMaterial3: true,
+            fontFamily: 'Roboto Mono',
           ),
           themeMode: mode,
           home: CursorAIInfoScreen(

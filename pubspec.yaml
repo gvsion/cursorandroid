@@ -98,3 +98,8 @@ flutter:
 
   assets:
     - assets/languages/
+
+  fonts:
+    - family: ShareTechMono
+      fonts:
+        - asset: assets/fonts/ShareTechMono-Regular.ttf

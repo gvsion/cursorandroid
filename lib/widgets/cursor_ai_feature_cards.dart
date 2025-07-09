@@ -1,9 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class CursorAIFeatureCards extends StatelessWidget {
+class CursorAIFeatureCards extends StatefulWidget {
   final Color cardColor;
   const CursorAIFeatureCards({super.key, required this.cardColor});
+
+  @override
+  State<CursorAIFeatureCards> createState() => _CursorAIFeatureCardsState();
+}
+
+class _CursorAIFeatureCardsState extends State<CursorAIFeatureCards>
+    with TickerProviderStateMixin {
+  late List<AnimationController> _animationControllers;
+  late List<Animation<double>> _scaleAnimations;
+  late List<Animation<double>> _elevationAnimations;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAnimations();
+  }
+
+  void _initializeAnimations() {
+    _animationControllers = [];
+    _scaleAnimations = [];
+    _elevationAnimations = [];
+
+    for (int i = 0; i < 3; i++) {
+      _animationControllers.add(AnimationController(
+        duration: const Duration(milliseconds: 300),
+        vsync: this,
+      ));
+      
+      _scaleAnimations.add(Tween<double>(
+        begin: 1.0,
+        end: 0.98,
+      ).animate(CurvedAnimation(
+        parent: _animationControllers[i],
+        curve: Curves.easeInOut,
+      )));
+      
+      _elevationAnimations.add(Tween<double>(
+        begin: 5.0,
+        end: 15.0,
+      ).animate(CurvedAnimation(
+        parent: _animationControllers[i],
+        curve: Curves.easeInOut,
+      )));
+    }
+  }
+
+  @override
+  void dispose() {
+    for (var controller in _animationControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onCardTap(int index, String title) {
+    final controller = _animationControllers[index];
+    controller.forward().then((_) {
+      controller.reverse();
+    });
+    
+    // Feedback tátil
+    HapticFeedback.mediumImpact();
+    // Removido: Mostrar snackbar com informação da feature
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +97,7 @@ class CursorAIFeatureCards extends StatelessWidget {
       children: features.map((feature) {
         return AnimatedFeatureCard(
           feature: feature,
-          cardColor: cardColor,
+          cardColor: widget.cardColor,
         );
       }).toList(),
     );
