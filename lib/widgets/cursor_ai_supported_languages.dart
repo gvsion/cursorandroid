@@ -133,69 +133,158 @@ class _CursorAISupportedLanguagesState extends State<CursorAISupportedLanguages>
           runSpacing: 16,
           alignment: WrapAlignment.center,
           children: languages.map((lang) {
-            final languageName = lang['name'] as String;
-            final scaleAnimation = _scaleAnimations[languageName]!;
-            
-            return AnimatedBuilder(
-              animation: scaleAnimation,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: scaleAnimation.value,
-                  child: GestureDetector(
-                    onTap: () => _onCardTap(languageName),
-                    child: Container(
-                      width: 110,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: widget.cardColor,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SvgPicture.asset(
-                            lang['asset'] as String,
-                            width: 32,
-                            height: 32,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            lang['name'] as String,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            lang['description'] as String,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white70
-                                  : Colors.grey[700],
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+            return AnimatedLanguageCard(
+              language: lang,
+              cardColor: widget.cardColor,
             );
           }).toList(),
         ),
       ],
+    );
+  }
+}
+
+class AnimatedLanguageCard extends StatefulWidget {
+  final Map<String, String> language;
+  final Color cardColor;
+
+  const AnimatedLanguageCard({
+    super.key,
+    required this.language,
+    required this.cardColor,
+  });
+
+  @override
+  State<AnimatedLanguageCard> createState() => _AnimatedLanguageCardState();
+}
+
+class _AnimatedLanguageCardState extends State<AnimatedLanguageCard>
+    with TickerProviderStateMixin {
+  late AnimationController _scaleController;
+  late AnimationController _bounceController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _bounceAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Controlador de escala
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    
+    // Controlador de bounce
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+
+    // Animações
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _scaleController,
+      curve: Curves.easeInOut,
+    ));
+
+    _bounceAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _bounceController,
+      curve: Curves.bounceOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  void _onTap() {
+    // Animação de escala
+    _scaleController.forward().then((_) {
+      _scaleController.reverse();
+    });
+
+    // Animação de bounce
+    _bounceController.forward().then((_) {
+      _bounceController.reverse();
+    });
+
+    // Feedback tátil
+    HapticFeedback.lightImpact();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _onTap,
+      child: AnimatedBuilder(
+        animation: Listenable.merge([
+          _scaleController,
+          _bounceController,
+        ]),
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              width: 110,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: widget.cardColor,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04 + (_bounceAnimation.value * 0.06)),
+                    blurRadius: 6 + (_bounceAnimation.value * 4),
+                    offset: Offset(0, 2 + (_bounceAnimation.value * 2)),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Transform.scale(
+                    scale: 1.0 + (_bounceAnimation.value * 0.1),
+                    child: SvgPicture.asset(
+                      widget.language['asset'] as String,
+                      width: 32,
+                      height: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.language['name'] as String,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    widget.language['description'] as String,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white70
+                          : Colors.grey[700],
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 } 
