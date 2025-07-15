@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'widgets/cursor_ai_header.dart';
 import 'widgets/cursor_ai_feature_cards.dart';
 import 'widgets/cursor_ai_supported_languages.dart';
@@ -229,10 +230,12 @@ class _CursorAIInfoScreenState extends State<CursorAIInfoScreen>
                               const SizedBox(height: 20),
                               Text(
                                 'Funcionalidades',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF6366F1),
+                                  color: Theme.of(context).brightness == Brightness.light
+                                      ? Colors.black
+                                      : const Color(0xFF6366F1),
                                 ),
                               ),
                               const SizedBox(height: 20),
@@ -260,10 +263,12 @@ class _CursorAIInfoScreenState extends State<CursorAIInfoScreen>
                               const SizedBox(height: 20),
                               Text(
                                 'Parcerias',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF6366F1),
+                                  color: Theme.of(context).brightness == Brightness.light
+                                      ? Colors.black
+                                      : const Color(0xFF6366F1),
                                 ),
                               ),
                               const SizedBox(height: 20),
@@ -324,48 +329,137 @@ class _CursorAIInfoScreenState extends State<CursorAIInfoScreen>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
-          Text(
-            'Parcerias: OpenAI, Simple Icons, Flutter Community',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5),
+          if (_selectedIndex != 3)
+            Column(
+              children: [
+                Text(
+                  'Parcerias:',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5),
+                      ),
+                  textAlign: TextAlign.center,
                 ),
-            textAlign: TextAlign.center,
-          ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _PartnerLogo(
+                      asset: 'assets/languages/openai.png',
+                      name: '',
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    _PartnerLogo(
+                      asset: 'assets/languages/simpleicons.png',
+                      name: '',
+                      size: 28,
+                    ),
+                  ],
+                ),
+              ],
+            ),
         ],
       ),
     );
   }
 }
 
-// Widget auxiliar para exibir logo e nome do parceiro (apenas PNG padrão)
-class _PartnerLogo extends StatelessWidget {
+// Widget auxiliar para exibir logo e nome do parceiro com animação ao toque
+class _PartnerLogo extends StatefulWidget {
   final String asset;
   final String name;
-  const _PartnerLogo({required this.asset, required this.name});
+  final double size;
+  const _PartnerLogo({required this.asset, required this.name, this.size = 48});
+
+  @override
+  State<_PartnerLogo> createState() => _PartnerLogoState();
+}
+
+class _PartnerLogoState extends State<_PartnerLogo> with TickerProviderStateMixin {
+  late AnimationController _scaleController;
+  late AnimationController _bounceController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _bounceAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _scaleController,
+      curve: Curves.easeInOut,
+    ));
+    _bounceAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _bounceController,
+      curve: Curves.bounceOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  void _onTap() {
+    _scaleController.forward().then((_) => _scaleController.reverse());
+    _bounceController.forward().then((_) => _bounceController.reverse());
+    HapticFeedback.lightImpact();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      children: [
-        SizedBox(
-          width: 48,
-          height: 48,
-          child: Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: Image.asset(
-              asset,
-              color: isDark ? Colors.white : null,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+    return GestureDetector(
+      onTap: _onTap,
+      child: AnimatedBuilder(
+        animation: Listenable.merge([_scaleController, _bounceController]),
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Column(
+              children: [
+                SizedBox(
+                  width: widget.size,
+                  height: widget.size,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Transform.scale(
+                      scale: 1.0 + (_bounceAnimation.value * 0.1),
+                      child: Image.asset(
+                        widget.asset,
+                        color: isDark ? Colors.white : null,
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+                      ),
+                    ),
+                  ),
+                ),
+                if (widget.name.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.name,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ],
             ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          name,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
-      ],
+          );
+        },
+      ),
     );
   }
 } 

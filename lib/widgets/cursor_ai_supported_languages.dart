@@ -144,7 +144,7 @@ class _CursorAISupportedLanguagesState extends State<CursorAISupportedLanguages>
   }
 }
 
-class AnimatedLanguageCard extends StatefulWidget {
+class AnimatedLanguageCard extends StatelessWidget {
   final Map<String, String> language;
   final Color cardColor;
 
@@ -154,137 +154,131 @@ class AnimatedLanguageCard extends StatefulWidget {
     required this.cardColor,
   });
 
-  @override
-  State<AnimatedLanguageCard> createState() => _AnimatedLanguageCardState();
-}
-
-class _AnimatedLanguageCardState extends State<AnimatedLanguageCard>
-    with TickerProviderStateMixin {
-  late AnimationController _scaleController;
-  late AnimationController _bounceController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _bounceAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    
-    // Controlador de escala
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-    
-    // Controlador de bounce
-    _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-
-    // Animações
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.easeInOut,
-    ));
-
-    _bounceAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _bounceController,
-      curve: Curves.bounceOut,
-    ));
-  }
-
-  @override
-  void dispose() {
-    _scaleController.dispose();
-    _bounceController.dispose();
-    super.dispose();
-  }
-
-  void _onTap() {
-    // Animação de escala
-    _scaleController.forward().then((_) {
-      _scaleController.reverse();
-    });
-
-    // Animação de bounce
-    _bounceController.forward().then((_) {
-      _bounceController.reverse();
-    });
-
-    // Feedback tátil
+  void _onTap(BuildContext context) {
     HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      builder: (context) => _LanguageDetailSheet(language: language),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _onTap,
-      child: AnimatedBuilder(
-        animation: Listenable.merge([
-          _scaleController,
-          _bounceController,
-        ]),
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: Container(
-              width: 110,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: widget.cardColor,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04 + (_bounceAnimation.value * 0.06)),
-                    blurRadius: 6 + (_bounceAnimation.value * 4),
-                    offset: Offset(0, 2 + (_bounceAnimation.value * 2)),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Transform.scale(
-                    scale: 1.0 + (_bounceAnimation.value * 0.1),
-                    child: SvgPicture.asset(
-                      widget.language['asset'] as String,
-                      width: 32,
-                      height: 32,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.language['name'] as String,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    widget.language['description'] as String,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white70
-                          : Colors.grey[700],
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => _onTap(context),
+      child: Container(
+        width: 110,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SvgPicture.asset(
+              language['asset'] as String,
+              width: 32,
+              height: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              language['name'] as String,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
             ),
-          );
-        },
+            const SizedBox(height: 3),
+            Text(
+              language['description'] as String,
+              style: TextStyle(
+                fontSize: 10,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white70
+                    : Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+// BottomSheet de detalhes da linguagem
+class _LanguageDetailSheet extends StatelessWidget {
+  final Map<String, String> language;
+  const _LanguageDetailSheet({required this.language});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.5,
+      minChildSize: 0.5,
+      maxChildSize: 1.0,
+      builder: (context, scrollController) {
+        return SingleChildScrollView(
+          controller: scrollController,
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              // Drag handle visual
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                language['name'] ?? '',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SvgPicture.asset(
+                language['asset'] ?? '',
+                width: 64,
+                height: 64,
+                color: isDark ? Colors.white : null,
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Text(
+                  language['description'] ?? '',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? Colors.white70 : Colors.grey[800],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        );
+      },
     );
   }
 } 
